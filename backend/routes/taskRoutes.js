@@ -17,8 +17,16 @@ router.post(
         body("name").notEmpty().withMessage("Task name is required"),
         body("description").notEmpty().withMessage("Description is required"),
         body("status")
-            .isIn(["ToDo", "InProgress", "Done"])
+            .isIn(["To Do", "In Progress", "Done"])
             .withMessage("Invalid status"),
+        body("priority")
+            .optional()
+            .isIn(["Low", "Medium", "High"])
+            .withMessage("Invalid priority"),
+        body("dueDate")
+            .optional()
+            .isISO8601()
+            .withMessage("Invalid date format"),
     ],
     addTask
 );
@@ -33,8 +41,16 @@ router.put(
             .withMessage("Description is required"),
         body("status")
             .optional()
-            .isIn(["ToDo", "InProgress", "Done"])
+            .isIn(["To Do", "In Progress", "Done"])
             .withMessage("Invalid status"),
+        body("priority")
+            .optional()
+            .isIn(["Low", "Medium", "High"])
+            .withMessage("Invalid priority"),
+        body("dueDate")
+            .optional()
+            .isISO8601()
+            .withMessage("Invalid date format"),
     ],
     updateTask
 );

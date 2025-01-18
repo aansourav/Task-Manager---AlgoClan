@@ -6,7 +6,7 @@ import * as taskService from "../services/taskService.js";
 export const getTasks = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const limit = parseInt(req.query.limit) || 6;
         const { tasks, total, totalPages } = await taskService.getAllTasks(
             page,
             limit
@@ -47,8 +47,10 @@ export const addTask = async (req, res) => {
             });
         }
 
-        const { name, description, status } = req.body;
-        const validStatuses = ["ToDo", "InProgress", "Done"];
+        const { name, description, status, priority, dueDate } = req.body;
+        const validStatuses = ["To Do", "In Progress", "Done"];
+        const validPriorities = ["Low", "Medium", "High"];
+
         if (status && !validStatuses.includes(status)) {
             return res.status(400).json({
                 status: "error",
@@ -57,10 +59,20 @@ export const addTask = async (req, res) => {
             });
         }
 
+        if (priority && !validPriorities.includes(priority)) {
+            return res.status(400).json({
+                status: "error",
+                message: "Invalid priority value",
+                error: `Priority must be one of: ${validPriorities.join(", ")}`,
+            });
+        }
+
         const taskData = {
             name: name.trim(),
             description: description?.trim(),
-            status: status || "ToDo",
+            status: status || "To Do",
+            priority: priority || "Medium",
+            dueDate: dueDate ? new Date(dueDate) : undefined,
         };
 
         const savedTask = await taskService.createTask(taskData);
@@ -93,7 +105,7 @@ export const updateTask = async (req, res) => {
         }
 
         const { id } = req.params;
-        const { name, description, status } = req.body;
+        const { name, description, status, priority, dueDate } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
@@ -102,7 +114,9 @@ export const updateTask = async (req, res) => {
             });
         }
 
-        const validStatuses = ["ToDo", "InProgress", "Done"];
+        const validStatuses = ["To Do", "In Progress", "Done"];
+        const validPriorities = ["Low", "Medium", "High"];
+
         if (status && !validStatuses.includes(status)) {
             return res.status(400).json({
                 status: "error",
@@ -111,10 +125,20 @@ export const updateTask = async (req, res) => {
             });
         }
 
+        if (priority && !validPriorities.includes(priority)) {
+            return res.status(400).json({
+                status: "error",
+                message: "Invalid priority value",
+                error: `Priority must be one of: ${validPriorities.join(", ")}`,
+            });
+        }
+
         const updates = {
             ...(name && { name: name.trim() }),
             ...(description && { description: description.trim() }),
             ...(status && { status }),
+            ...(priority && { priority }),
+            ...(dueDate && { dueDate: new Date(dueDate) }),
         };
 
         const updatedTask = await taskService.updateTaskById(id, updates);
