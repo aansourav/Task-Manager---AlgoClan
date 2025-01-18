@@ -28,6 +28,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import formatDate from "@/utils/formatDate";
 import {
     CalendarIcon,
     CheckCircleIcon,
@@ -60,17 +61,6 @@ export default function TaskList({
     const [editingTask, setEditingTask] = useState(null);
     const [deletingTask, setDeletingTask] = useState(null);
     const [openPopoverId, setOpenPopoverId] = useState(null);
-
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date
-            .toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-            })
-            .replace(/ /g, "-");
-    };
 
     const handleEdit = (task) => {
         onEditTask(task);
