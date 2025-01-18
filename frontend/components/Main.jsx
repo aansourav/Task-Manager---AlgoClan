@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/use-toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import Pagination from "./Pagination";
@@ -14,25 +15,21 @@ const getTasks = async (page = 1) => {
 };
 
 export default function App() {
+    const { toast } = useToast();
     const queryClient = useQueryClient();
     const [currentPage, setCurrentPage] = useState(1);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [selectedTask, setSelectedTask] = useState(null);
+
+    // Query for fetching tasks
     const { data, isLoading, error } = useQuery({
         queryKey: ["tasks", currentPage],
         queryFn: () => getTasks(currentPage),
     });
 
-    const [isFormOpen, setIsFormOpen] = useState(false);
-    const tasksPerPage = 6;
-
-    // Handle loading and error states
-    if (isLoading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error.message}</div>;
-
-    const tasks = data?.data?.tasks || [];
-    const pagination = data?.data?.pagination || {};
-
-    const addTask = async (newTask) => {
-        try {
+    // Add task mutation
+    const addTaskMutation = useMutation({
+        mutationFn: async (newTask) => {
             const response = await fetch("http://localhost:4000/api/tasks", {
                 method: "POST",
                 headers: {
@@ -40,20 +37,63 @@ export default function App() {
                 },
                 body: JSON.stringify(newTask),
             });
-            const data = await response.json();
             if (!response.ok) {
-                throw new Error(data.message || "Failed to create task");
+                throw new Error("Failed to create task");
             }
-            queryClient.invalidateQueries(["tasks"]);
-            setIsFormOpen(false);
-        } catch (error) {
-            console.error("Error adding task:", error);
-            throw error;
-        }
-    };
+            return response.json();
+        },
+        onMutate: async (newTask) => {
+            await queryClient.cancelQueries(["tasks", currentPage]);
+            const previousTasks = queryClient.getQueryData([
+                "tasks",
+                currentPage,
+            ]);
 
-    const editTask = async (taskId, updatedFields) => {
-        try {
+            // Optimistically add the new task to the cache
+            queryClient.setQueryData(["tasks", currentPage], (old) => ({
+                ...old,
+                data: {
+                    ...old.data,
+                    tasks: [
+                        {
+                            ...newTask,
+                            _id: Date.now().toString(), // Temporary ID
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
+                        },
+                        ...old.data.tasks,
+                    ],
+                },
+            }));
+
+            return { previousTasks };
+        },
+        onError: (err, newTask, context) => {
+            queryClient.setQueryData(
+                ["tasks", currentPage],
+                context.previousTasks
+            );
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to create task",
+            });
+        },
+        onSuccess: () => {
+            toast({
+                title: "Success",
+                description: "Task created successfully",
+            });
+            setIsFormOpen(false);
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries(["tasks", currentPage]);
+        },
+    });
+
+    // Edit task mutation
+    const editTaskMutation = useMutation({
+        mutationFn: async ({ taskId, updatedTask }) => {
             const response = await fetch(
                 `http://localhost:4000/api/tasks/${taskId}`,
                 {
@@ -61,42 +101,159 @@ export default function App() {
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify(updatedFields),
+                    body: JSON.stringify(updatedTask),
                 }
             );
-            const data = await response.json();
             if (!response.ok) {
-                throw new Error(data.message || "Failed to update task");
+                throw new Error("Failed to update task");
             }
-            queryClient.invalidateQueries(["tasks"]);
-        } catch (error) {
-            console.error("Error updating task:", error);
-            throw error;
-        }
-    };
+            return response.json();
+        },
+        onMutate: async ({ taskId, updatedTask }) => {
+            await queryClient.cancelQueries(["tasks", currentPage]);
+            const previousTasks = queryClient.getQueryData([
+                "tasks",
+                currentPage,
+            ]);
 
-    const deleteTask = async (taskId) => {
-        try {
+            queryClient.setQueryData(["tasks", currentPage], (old) => ({
+                ...old,
+                data: {
+                    ...old.data,
+                    tasks: old.data.tasks.map((task) =>
+                        task._id === taskId ? { ...task, ...updatedTask } : task
+                    ),
+                },
+            }));
+
+            return { previousTasks };
+        },
+        onError: (err, variables, context) => {
+            queryClient.setQueryData(
+                ["tasks", currentPage],
+                context.previousTasks
+            );
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to update task",
+            });
+        },
+        onSuccess: () => {
+            toast({
+                title: "Success",
+                description: "Task updated successfully",
+            });
+            setIsFormOpen(false);
+            setSelectedTask(null);
+        },
+    });
+
+    // Delete task mutation
+    const deleteTaskMutation = useMutation({
+        mutationFn: async (taskId) => {
             const response = await fetch(
                 `http://localhost:4000/api/tasks/${taskId}`,
                 {
                     method: "DELETE",
                 }
             );
-            const data = await response.json();
             if (!response.ok) {
-                throw new Error(data.message || "Failed to delete task");
+                throw new Error("Failed to delete task");
             }
-            queryClient.invalidateQueries(["tasks"]);
-        } catch (error) {
-            console.error("Error deleting task:", error);
-            throw error;
+            return response.json();
+        },
+        onMutate: async (taskId) => {
+            await queryClient.cancelQueries(["tasks", currentPage]);
+            const previousTasks = queryClient.getQueryData([
+                "tasks",
+                currentPage,
+            ]);
+
+            // Optimistically remove the task from the cache
+            queryClient.setQueryData(["tasks", currentPage], (old) => ({
+                ...old,
+                data: {
+                    ...old.data,
+                    tasks: old.data.tasks.filter((task) => task._id !== taskId),
+                },
+            }));
+
+            return { previousTasks };
+        },
+        onError: (err, taskId, context) => {
+            // Rollback on error
+            queryClient.setQueryData(
+                ["tasks", currentPage],
+                context.previousTasks
+            );
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to delete task",
+            });
+        },
+        onSuccess: () => {
+            toast({
+                title: "Success",
+                description: "Task deleted successfully",
+            });
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries(["tasks", currentPage]);
+        },
+    });
+
+    const handleEditClick = (task) => {
+        // Format the date to YYYY-MM-DD for the input field
+        const formattedTask = {
+            ...task,
+            dueDate: task.dueDate
+                ? new Date(task.dueDate).toISOString().split("T")[0]
+                : "",
+        };
+        setSelectedTask(formattedTask);
+        setIsFormOpen(true);
+    };
+
+    const handleSubmit = (taskData) => {
+        if (selectedTask) {
+            editTaskMutation.mutate({
+                taskId: selectedTask._id,
+                updatedTask: taskData,
+            });
+        } else {
+            addTaskMutation.mutate(taskData);
         }
     };
 
-    const handlePageChange = (newPage) => {
-        setCurrentPage(newPage);
+    const handleDeleteTask = (taskId) => {
+        deleteTaskMutation.mutate(taskId);
     };
+
+    const handleStatusChange = (taskId, newStatus) => {
+        editTaskMutation.mutate({
+            taskId,
+            updatedTask: { status: newStatus },
+        });
+    };
+
+    if (isLoading)
+        return (
+            <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+                <div className="relative w-20 h-20">
+                    <div className="absolute top-0 left-0 right-0 bottom-0">
+                        <div className="w-20 h-20 border-8 border-gray-200 rounded-full animate-spin border-t-blue-500" />
+                    </div>
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                        <div className="w-8 h-8 bg-white rounded-full" />
+                    </div>
+                </div>
+            </div>
+        );
+    if (error) return <div>Error: {error.message}</div>;
+
+    const tasks = data?.data?.tasks || [];
 
     return (
         <div className="min-h-screen bg-gray-100 p-8">
@@ -111,20 +268,25 @@ export default function App() {
                 </header>
                 <TaskList
                     tasks={tasks}
-                    onEditTask={editTask}
-                    onDeleteTask={deleteTask}
+                    onEditTask={handleEditClick}
+                    onDeleteTask={handleDeleteTask}
+                    onStatusChange={handleStatusChange}
                 />
                 <div className="mt-8">
                     <Pagination
                         currentPage={data?.data?.pagination?.currentPage || 1}
                         totalPages={data?.data?.pagination?.totalPages || 1}
-                        onPageChange={handlePageChange}
+                        onPageChange={setCurrentPage}
                     />
                 </div>
                 {isFormOpen && (
                     <TaskForm
-                        onAddTask={addTask}
-                        onClose={() => setIsFormOpen(false)}
+                        task={selectedTask}
+                        onSubmit={handleSubmit}
+                        onClose={() => {
+                            setIsFormOpen(false);
+                            setSelectedTask(null);
+                        }}
                     />
                 )}
             </div>

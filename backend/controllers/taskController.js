@@ -47,7 +47,7 @@ export const addTask = async (req, res) => {
             });
         }
 
-        const { name, description, status, priority, dueDate } = req.body;
+        const { title, description, status, priority, dueDate } = req.body;
         const validStatuses = ["To Do", "In Progress", "Done"];
         const validPriorities = ["Low", "Medium", "High"];
 
@@ -68,7 +68,7 @@ export const addTask = async (req, res) => {
         }
 
         const taskData = {
-            name: name.trim(),
+            title: title.trim(),
             description: description?.trim(),
             status: status || "To Do",
             priority: priority || "Medium",
@@ -105,7 +105,7 @@ export const updateTask = async (req, res) => {
         }
 
         const { id } = req.params;
-        const { name, description, status, priority, dueDate } = req.body;
+        const { title, description, status, priority, dueDate } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
@@ -134,7 +134,7 @@ export const updateTask = async (req, res) => {
         }
 
         const updates = {
-            ...(name && { name: name.trim() }),
+            ...(title && { title: title.trim() }),
             ...(description && { description: description.trim() }),
             ...(status && { status }),
             ...(priority && { priority }),

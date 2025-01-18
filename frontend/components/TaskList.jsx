@@ -16,7 +16,6 @@ import {
     CardDescription,
     CardFooter,
     CardHeader,
-    CardTitle,
 } from "@/components/ui/card";
 import {
     DropdownMenu,
@@ -39,7 +38,6 @@ import {
     Trash,
 } from "lucide-react";
 import React, { useState } from "react";
-import TaskForm from "./TaskForm";
 
 const statusIcons = {
     "To Do": <CircleIcon className="h-5 w-5 text-gray-500" />,
@@ -53,9 +51,15 @@ const priorityColors = {
     High: "bg-red-100 text-red-800",
 };
 
-export default function TaskList({ tasks, onEditTask, onDeleteTask }) {
+export default function TaskList({
+    tasks,
+    onEditTask,
+    onDeleteTask,
+    onStatusChange,
+}) {
     const [editingTask, setEditingTask] = useState(null);
     const [deletingTask, setDeletingTask] = useState(null);
+    const [openPopoverId, setOpenPopoverId] = useState(null);
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -69,7 +73,7 @@ export default function TaskList({ tasks, onEditTask, onDeleteTask }) {
     };
 
     const handleEdit = (task) => {
-        setEditingTask(task);
+        onEditTask(task);
     };
 
     const handleDelete = (task) => {
@@ -78,15 +82,14 @@ export default function TaskList({ tasks, onEditTask, onDeleteTask }) {
 
     const confirmDelete = () => {
         if (deletingTask) {
-            onDeleteTask(deletingTask.id);
+            onDeleteTask(deletingTask._id);
             setDeletingTask(null);
         }
     };
 
     const handleStatusChange = (taskId, newStatus) => {
-        onEditTask(taskId, { status: newStatus });
-        // Close the popover
-        document.body.click();
+        onStatusChange(taskId, newStatus);
+        setOpenPopoverId(null);
     };
 
     return (
@@ -98,12 +101,20 @@ export default function TaskList({ tasks, onEditTask, onDeleteTask }) {
                 >
                     <CardHeader className="flex-grow">
                         <div className="flex justify-between items-start">
-                            <CardTitle className="flex items-center text-lg">
-                                <Popover key={task.status}>
+                            <div className="flex items-center">
+                                <Popover
+                                    open={openPopoverId === task._id}
+                                    onOpenChange={(open) =>
+                                        setOpenPopoverId(open ? task._id : null)
+                                    }
+                                >
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant="ghost"
                                             className="p-0 h-auto"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                            }}
                                         >
                                             {statusIcons[task.status]}
                                         </Button>
@@ -116,12 +127,13 @@ export default function TaskList({ tasks, onEditTask, onDeleteTask }) {
                                                         key={status}
                                                         variant="ghost"
                                                         className="flex items-center justify-start px-2 py-1"
-                                                        onClick={() =>
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
                                                             handleStatusChange(
-                                                                task.id,
+                                                                task._id,
                                                                 status
-                                                            )
-                                                        }
+                                                            );
+                                                        }}
                                                     >
                                                         {React.cloneElement(
                                                             icon,
@@ -138,9 +150,9 @@ export default function TaskList({ tasks, onEditTask, onDeleteTask }) {
                                     </PopoverContent>
                                 </Popover>
                                 <span className="ml-2 truncate">
-                                    {task.name}
+                                    {task.title}
                                 </span>
-                            </CardTitle>
+                            </div>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
@@ -171,7 +183,10 @@ export default function TaskList({ tasks, onEditTask, onDeleteTask }) {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Badge className={priorityColors[task.priority]}>
+                        <Badge
+                            className={priorityColors[task.priority]}
+                            variant="outline"
+                        >
                             {task.priority} Priority
                         </Badge>
                     </CardContent>
@@ -181,17 +196,6 @@ export default function TaskList({ tasks, onEditTask, onDeleteTask }) {
                     </CardFooter>
                 </Card>
             ))}
-
-            {editingTask && (
-                <TaskForm
-                    task={editingTask}
-                    onAddTask={(updatedTask) => {
-                        onEditTask(editingTask.id, updatedTask);
-                        setEditingTask(null);
-                    }}
-                    onClose={() => setEditingTask(null)}
-                />
-            )}
 
             <AlertDialog
                 open={!!deletingTask}

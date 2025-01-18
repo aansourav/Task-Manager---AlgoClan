@@ -14,7 +14,7 @@ router.get("/tasks", getTasks);
 router.post(
     "/tasks",
     [
-        body("name").notEmpty().withMessage("Task name is required"),
+        body("title").notEmpty().withMessage("Task title is required"),
         body("description").notEmpty().withMessage("Description is required"),
         body("status")
             .isIn(["To Do", "In Progress", "Done"])
@@ -34,7 +34,10 @@ router.post(
 router.put(
     "/tasks/:id",
     [
-        body("name").optional().notEmpty().withMessage("Task name is required"),
+        body("title")
+            .optional()
+            .notEmpty()
+            .withMessage("Task title is required"),
         body("description")
             .optional()
             .notEmpty()
