@@ -2,6 +2,12 @@
 
 A modern, responsive task management application built with Next.js, React Query, and Tailwind CSS. This application provides a comprehensive interface for managing tasks with features like real-time updates, optimistic updates, and a responsive design.
 
+### Live Links
+
+#### Frontend - https://task-manager-algo-clan.vercel.app
+#### Backend - https://task-manager-algo-clan-backend.vercel.app
+
+
 ## Features
 
 ### Core Functionality
