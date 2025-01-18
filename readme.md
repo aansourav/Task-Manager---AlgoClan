@@ -257,6 +257,13 @@ The server will start on the port specified in the `.env` file (default is `3000
 **Open another terminal in the backend directory**
 **Then give the following commands**
 
+1. **Set up environment variables in frontend**:
+   Create a `.env` file in the root of the backend directory and add the following:
+
+    ```
+    NEXT_PUBLIC_API_URL=YOUR BACKEND URL
+    ```
+
 ```bash
     npm install
     npm run dev
