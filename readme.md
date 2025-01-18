@@ -250,7 +250,7 @@ The API provides consistent error responses with a `message` and `details` prope
      npm run dev
     ```
 
-The server will start on the port specified in the `.env` file (default is `4000`).
+The server will start on the port specified in the `.env` file (default is `3000`).
 
 ### Setup frontend
 

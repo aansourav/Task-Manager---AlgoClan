@@ -4,12 +4,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 // Simulate network delay (remove in production)
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 // API Functions
 export const getTasks = async (page = 1) => {
     await delay(2000); // Add 2 second delay to simulate network latency
-    const response = await fetch(
-        `https://task-manager-algo-clan-backend.vercel.app/api/tasks?page=${page}`
-    );
+    const response = await fetch(`${API_URL}/api/tasks?page=${page}`);
     return response.json();
 };
 
@@ -30,7 +30,7 @@ export const useTaskMutations = (currentPage, onSuccess = {}) => {
     // Add task mutation
     const addTaskMutation = useMutation({
         mutationFn: async (newTask) => {
-            const response = await fetch("https://task-manager-algo-clan-backend.vercel.app/api/tasks", {
+            const response = await fetch(`${API_URL}/api/tasks`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -94,16 +94,13 @@ export const useTaskMutations = (currentPage, onSuccess = {}) => {
     // Edit task mutation
     const editTaskMutation = useMutation({
         mutationFn: async ({ taskId, updatedTask }) => {
-            const response = await fetch(
-                `https://task-manager-algo-clan-backend.vercel.app/api/tasks/${taskId}`,
-                {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(updatedTask),
-                }
-            );
+            const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(updatedTask),
+            });
             if (!response.ok) {
                 throw new Error("Failed to update task");
             }
@@ -155,12 +152,9 @@ export const useTaskMutations = (currentPage, onSuccess = {}) => {
             const loadingToast = showLoadingToast("Deleting task...");
             try {
                 await delay(1500); // Simulate longer network delay for delete
-                const response = await fetch(
-                    `https://task-manager-algo-clan-backend.vercel.app/api/tasks/${taskId}`,
-                    {
-                        method: "DELETE",
-                    }
-                );
+                const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
+                    method: "DELETE",
+                });
                 if (!response.ok) {
                     throw new Error("Failed to delete task");
                 }
