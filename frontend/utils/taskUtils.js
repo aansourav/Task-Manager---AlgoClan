@@ -30,17 +30,23 @@ export const useTaskMutations = (currentPage, onSuccess = {}) => {
     // Add task mutation
     const addTaskMutation = useMutation({
         mutationFn: async (newTask) => {
-            const response = await fetch(`${API_URL}/api/tasks`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(newTask),
-            });
-            if (!response.ok) {
-                throw new Error("Failed to create task");
+            const loadingToast = showLoadingToast("Creating task...");
+            try {
+                await delay(1000); // Simulate network delay
+                const response = await fetch(`${API_URL}/api/tasks`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(newTask),
+                });
+                if (!response.ok) {
+                    throw new Error("Failed to create task");
+                }
+                return response.json();
+            } finally {
+                loadingToast.dismiss();
             }
-            return response.json();
         },
         onMutate: async (newTask) => {
             // Cancel any outgoing refetches
@@ -83,6 +89,10 @@ export const useTaskMutations = (currentPage, onSuccess = {}) => {
             });
         },
         onSuccess: () => {
+            toast({
+                title: "Success",
+                description: "Task created successfully",
+            });
             onSuccess.addTask?.();
             queryClient.invalidateQueries({
                 queryKey: ["tasks"],
@@ -94,17 +104,23 @@ export const useTaskMutations = (currentPage, onSuccess = {}) => {
     // Edit task mutation
     const editTaskMutation = useMutation({
         mutationFn: async ({ taskId, updatedTask }) => {
-            const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(updatedTask),
-            });
-            if (!response.ok) {
-                throw new Error("Failed to update task");
+            const loadingToast = showLoadingToast("Updating task...");
+            try {
+                await delay(800); // Simulate network delay
+                const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(updatedTask),
+                });
+                if (!response.ok) {
+                    throw new Error("Failed to update task");
+                }
+                return response.json();
+            } finally {
+                loadingToast.dismiss();
             }
-            return response.json();
         },
         onMutate: async ({ taskId, updatedTask }) => {
             await queryClient.cancelQueries(["tasks"]);
@@ -138,6 +154,10 @@ export const useTaskMutations = (currentPage, onSuccess = {}) => {
             });
         },
         onSuccess: () => {
+            toast({
+                title: "Success",
+                description: "Task updated successfully",
+            });
             onSuccess.editTask?.();
             queryClient.invalidateQueries({
                 queryKey: ["tasks"],
