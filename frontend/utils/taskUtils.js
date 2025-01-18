@@ -8,7 +8,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 export const getTasks = async (page = 1) => {
     await delay(2000); // Add 2 second delay to simulate network latency
     const response = await fetch(
-        `http://localhost:4000/api/tasks?page=${page}`
+        `https://task-manager-algo-clan-backend.vercel.app/api/tasks?page=${page}`
     );
     return response.json();
 };
@@ -30,7 +30,7 @@ export const useTaskMutations = (currentPage, onSuccess = {}) => {
     // Add task mutation
     const addTaskMutation = useMutation({
         mutationFn: async (newTask) => {
-            const response = await fetch("http://localhost:4000/api/tasks", {
+            const response = await fetch("https://task-manager-algo-clan-backend.vercel.app/api/tasks", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -95,7 +95,7 @@ export const useTaskMutations = (currentPage, onSuccess = {}) => {
     const editTaskMutation = useMutation({
         mutationFn: async ({ taskId, updatedTask }) => {
             const response = await fetch(
-                `http://localhost:4000/api/tasks/${taskId}`,
+                `https://task-manager-algo-clan-backend.vercel.app/api/tasks/${taskId}`,
                 {
                     method: "PUT",
                     headers: {
@@ -156,7 +156,7 @@ export const useTaskMutations = (currentPage, onSuccess = {}) => {
             try {
                 await delay(1500); // Simulate longer network delay for delete
                 const response = await fetch(
-                    `http://localhost:4000/api/tasks/${taskId}`,
+                    `https://task-manager-algo-clan-backend.vercel.app/api/tasks/${taskId}`,
                     {
                         method: "DELETE",
                     }
