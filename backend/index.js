@@ -7,14 +7,17 @@ import taskRoutes from "./routes/taskRoutes.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 3000;
 
 connectDB();
 
 app.use(express.json());
 app.use(
     cors({
-        origin: ["http://localhost:3000"],
+        origin: [
+            "http://localhost:3000",
+            "https://task-manager-algo-clan.vercel.app",
+        ],
         credentials: false,
     })
 );
