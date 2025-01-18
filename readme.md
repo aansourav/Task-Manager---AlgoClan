@@ -68,8 +68,8 @@ A modern, responsive task management application built with Next.js, React Query
     -   Retry mechanisms for failed requests
     -   User-friendly error messages
 
+## UI Screenshots
 
-##UI Screenshots
 ![alt text](<Screenshot 2025-01-18 155241.png>) ![alt text](<Screenshot 2025-01-18 155254.png>) ![alt text](<Screenshot 2025-01-18 155318.png>) ![alt text](<Screenshot 2025-01-18 155328.png>) ![alt text](<Screenshot 2025-01-18 155341.png>) ![alt text](<Screenshot 2025-01-18 155356.png>)
 
 # Task Manager Backend
