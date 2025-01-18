@@ -6,6 +6,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // API Functions
 export const getTasks = async (page = 1) => {
+    await delay(2000); // Add 2 second delay to simulate network latency
     const response = await fetch(
         `http://localhost:4000/api/tasks?page=${page}`
     );
@@ -29,26 +30,17 @@ export const useTaskMutations = (currentPage, onSuccess = {}) => {
     // Add task mutation
     const addTaskMutation = useMutation({
         mutationFn: async (newTask) => {
-            const loadingToast = showLoadingToast("Creating task...");
-            try {
-                await delay(1000); // Simulate network delay
-                const response = await fetch(
-                    "http://localhost:4000/api/tasks",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify(newTask),
-                    }
-                );
-                if (!response.ok) {
-                    throw new Error("Failed to create task");
-                }
-                return response.json();
-            } finally {
-                loadingToast.dismiss();
+            const response = await fetch("http://localhost:4000/api/tasks", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(newTask),
+            });
+            if (!response.ok) {
+                throw new Error("Failed to create task");
             }
+            return response.json();
         },
         onMutate: async (newTask) => {
             // Cancel any outgoing refetches
@@ -80,7 +72,6 @@ export const useTaskMutations = (currentPage, onSuccess = {}) => {
             return { previousTasks };
         },
         onError: (err, newTask, context) => {
-            // Revert the optimistic update
             queryClient.setQueryData(
                 ["tasks", currentPage],
                 context.previousTasks
@@ -92,13 +83,7 @@ export const useTaskMutations = (currentPage, onSuccess = {}) => {
             });
         },
         onSuccess: () => {
-            toast({
-                title: "Success",
-                description: "Task created successfully",
-            });
             onSuccess.addTask?.();
-
-            // Invalidate and refetch all task-related queries
             queryClient.invalidateQueries({
                 queryKey: ["tasks"],
                 refetchType: "all",
@@ -109,26 +94,20 @@ export const useTaskMutations = (currentPage, onSuccess = {}) => {
     // Edit task mutation
     const editTaskMutation = useMutation({
         mutationFn: async ({ taskId, updatedTask }) => {
-            const loadingToast = showLoadingToast("Updating task...");
-            try {
-                await delay(800); // Simulate network delay
-                const response = await fetch(
-                    `http://localhost:4000/api/tasks/${taskId}`,
-                    {
-                        method: "PUT",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify(updatedTask),
-                    }
-                );
-                if (!response.ok) {
-                    throw new Error("Failed to update task");
+            const response = await fetch(
+                `http://localhost:4000/api/tasks/${taskId}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(updatedTask),
                 }
-                return response.json();
-            } finally {
-                loadingToast.dismiss();
+            );
+            if (!response.ok) {
+                throw new Error("Failed to update task");
             }
+            return response.json();
         },
         onMutate: async ({ taskId, updatedTask }) => {
             await queryClient.cancelQueries(["tasks"]);
@@ -162,13 +141,7 @@ export const useTaskMutations = (currentPage, onSuccess = {}) => {
             });
         },
         onSuccess: () => {
-            toast({
-                title: "Success",
-                description: "Task updated successfully",
-            });
             onSuccess.editTask?.();
-
-            // Invalidate and refetch all task-related queries
             queryClient.invalidateQueries({
                 queryKey: ["tasks"],
                 refetchType: "all",

@@ -18,6 +18,13 @@ export default function App() {
     const { data, isLoading, error } = useQuery({
         queryKey: ["tasks", currentPage],
         queryFn: () => getTasks(currentPage),
+        refetchInterval: 5000,
+        refetchOnWindowFocus: true,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+        refetchIntervalInBackground: true,
+        retry: 3,
+        retryDelay: 1000,
     });
 
     // Get mutations with success callbacks
@@ -79,19 +86,37 @@ export default function App() {
                         <PlusIcon className="mr-2 h-4 w-4" /> Add Task
                     </Button>
                 </header>
-                <TaskList
-                    tasks={tasks}
-                    onEditTask={handleEditClick}
-                    onDeleteTask={handleDeleteTask}
-                    onStatusChange={handleStatusChange}
-                />
-                <div className="mt-8">
-                    <Pagination
-                        currentPage={data?.data?.pagination?.currentPage || 1}
-                        totalPages={data?.data?.pagination?.totalPages || 1}
-                        onPageChange={setCurrentPage}
-                    />
-                </div>
+                {tasks.length > 0 ? (
+                    <>
+                        <TaskList
+                            tasks={tasks}
+                            onEditTask={handleEditClick}
+                            onDeleteTask={handleDeleteTask}
+                            onStatusChange={handleStatusChange}
+                        />
+                        {data?.data?.pagination?.totalPages > 1 && (
+                            <div className="mt-8">
+                                <Pagination
+                                    currentPage={
+                                        data?.data?.pagination?.currentPage || 1
+                                    }
+                                    totalPages={
+                                        data?.data?.pagination?.totalPages || 1
+                                    }
+                                    onPageChange={setCurrentPage}
+                                />
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <div className="flex items-center justify-center h-[60vh]">
+                        <div className="text-center text-gray-500 text-lg">
+                            No tasks in your bucket
+                            <br />
+                            Please add a task
+                        </div>
+                    </div>
+                )}
                 {isFormOpen && (
                     <TaskForm
                         task={selectedTask}
